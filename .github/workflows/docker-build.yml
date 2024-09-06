@@ -37,8 +37,8 @@ jobs:
         run: |
           TIMESTAMP=$(date --utc +%Y-%m-%dT%H%M%S)
 
-          docker builder use ${{ steps.launch_builder.outputs.name }}
-          docker build --pull --file Containerfile\
+          docker buildx use ${{ steps.launch_builder.outputs.name }}
+          docker buildx build --pull --file Containerfile\
             --platform linux/amd64 --platform linux/arm64\
             --build-arg VERSION=${{ env.version }}\
             --label "org.label-schema.vcs-ref=${{ github.sha }}"\
