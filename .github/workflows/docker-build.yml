@@ -1,0 +1,48 @@
+---
+name: Build and Push Container Image
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '*.md' # Don't trigger builds for documentation changes
+  workflow_dispatch:
+    inputs: {}
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  version: "27.1"
+
+jobs:
+  build:
+    name: Build and Push Container Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: build-image
+        run: |
+          TIMESTAMP=$(date --utc +%Y-%m-%dT%H%M%S)
+
+          docker build --pull --file Containerfile \
+            --build-arg VERSION=${{ env.version }}\
+            --label "org.label-schema.vcs-ref=${{ github.sha }}" \
+            --label "org.label-schema.version=${{ env.version }}" \
+            --tag ghcr.io/jmanero/bitcoind:latest .
+
+          docker tag ghcr.io/jmanero/bitcoind:latest ghcr.io/jmanero/bitcoind:${{ env.version }}
+          docker tag ghcr.io/jmanero/bitcoind:latest ghcr.io/jmanero/bitcoind:${{ env.version }}-${{ github.sha }}
+          docker push ghcr.io/jmanero/bitcoind:${{ env.version }}-${{ github.sha }}
+          docker push ghcr.io/jmanero/bitcoind:${{ env.version }}
+          docker push ghcr.io/jmanero/bitcoind:latest
