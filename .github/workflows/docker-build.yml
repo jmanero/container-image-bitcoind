@@ -39,7 +39,7 @@ jobs:
 
           docker buildx use ${{ steps.launch_builder.outputs.name }}
           docker buildx build --push --pull\
-            --platform linux/amd64 --platform linux/arm64\
+            --platform linux/amd64,linux/arm64\
             --build-arg VERSION=${{ env.version }}\
             --label "org.label-schema.vcs-ref=${{ github.sha }}"\
             --label "org.label-schema.version=${{ env.version }}"\
