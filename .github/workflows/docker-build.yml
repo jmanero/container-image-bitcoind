@@ -33,20 +33,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: build-image
+      - name: Build and Push Image
         run: |
           TIMESTAMP=$(date --utc +%Y-%m-%dT%H%M%S)
 
           docker buildx use ${{ steps.launch_builder.outputs.name }}
-          docker buildx build --load --pull --file Containerfile\
+          docker buildx build --push --pull\
             --platform linux/amd64 --platform linux/arm64\
             --build-arg VERSION=${{ env.version }}\
             --label "org.label-schema.vcs-ref=${{ github.sha }}"\
             --label "org.label-schema.version=${{ env.version }}"\
-            --tag ghcr.io/jmanero/bitcoind:latest .
-
-          docker tag ghcr.io/jmanero/bitcoind:latest ghcr.io/jmanero/bitcoind:${{ env.version }}
-          docker tag ghcr.io/jmanero/bitcoind:latest ghcr.io/jmanero/bitcoind:${{ env.version }}-${{ github.sha }}
-          docker push ghcr.io/jmanero/bitcoind:${{ env.version }}-${{ github.sha }}
-          docker push ghcr.io/jmanero/bitcoind:${{ env.version }}
-          docker push ghcr.io/jmanero/bitcoind:latest
+            --tag ghcr.io/jmanero/bitcoind:latest\
+            --tag ghcr.io/jmanero/bitcoind:${{ env.version }}\
+            --tag ghcr.io/jmanero/bitcoind:${{ env.version }}-${{ github.sha }}\
+            --file Containerfile .
