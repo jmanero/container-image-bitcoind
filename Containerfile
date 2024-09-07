@@ -4,7 +4,7 @@ FROM docker.io/library/fedora:latest AS fetch
 ARG VERSION
 
 ## Download and validate a bitcoin-core build
-RUN curl -O https://bitcoincore.org/bin/bitcoin-core-${VERSION}/bitcoin-${VERSION}-$(arch)-linux-gnu.tar.gz
+RUN curl -O --fail https://bitcoincore.org/bin/bitcoin-core-${VERSION}/bitcoin-${VERSION}-$(arch)-linux-gnu.tar.gz
 ADD https://bitcoincore.org/bin/bitcoin-core-${VERSION}/SHA256SUMS .
 ADD https://bitcoincore.org/bin/bitcoin-core-${VERSION}/SHA256SUMS.asc .
 
