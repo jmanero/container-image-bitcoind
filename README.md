@@ -1,5 +1,5 @@
-Bitcoind Image Build
-====================
+Bitcoin-Core Container Image Build
+==================================
 
 ## Build
 
