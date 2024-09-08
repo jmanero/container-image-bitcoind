@@ -43,10 +43,18 @@ RUN [ -f /build/usr/bin/ld.so ] || (echo "Unable to find a dynamic loader librar
 
 RUN cp -av /etc/ld.so.* /build/etc
 
+FROM docker.io/library/golang:alpine AS monitor
+
+COPY monitor /build
+WORKDIR /build
+
+RUN --mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/go/pkg/mod go build -v -o monitor .
+
 ## Build a scratch output image
 FROM scratch
 
 COPY --from=fetch /build /
+COPY --from=monitor /build/monitor /usr/bin/monitor
 COPY bitcoin.conf /etc/
 
 ENTRYPOINT [ "/usr/bin/bitcoind" ]
