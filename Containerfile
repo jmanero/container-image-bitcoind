@@ -1,4 +1,4 @@
-ARG VERSION="27.1"
+ARG VERSION="29.2"
 
 FROM docker.io/library/fedora:latest AS fetch
 ARG VERSION
@@ -10,6 +10,8 @@ ADD https://bitcoincore.org/bin/bitcoin-core-${VERSION}/SHA256SUMS.asc .
 
 ADD https://github.com/bitcoin-core/guix.sigs/archive/refs/heads/main.tar.gz ./signers.tar.gz
 RUN mkdir /signers; tar -xzf signers.tar.gz --strip-components 1 -C /signers
+
+RUN dnf install -y gpg
 
 ## gpg forks some agent daemons that leave lock files laying around, which block subsequent gpg calls
 RUN gpg --lock-never --import /signers/builder-keys/* && gpgconf --kill all
@@ -33,16 +35,26 @@ RUN tar -xvzf bitcoin-${VERSION}-$(arch)-linux-gnu.tar.gz --strip-components 1 -
 # libgcc_s.so.1 => /lib64/libgcc_s.so.1 (0x00007081df53b000)
 # libc.so.6 => /lib64/libc.so.6 (0x00007081df34e000)
 # /lib64/ld-linux-x86-64.so.2 (0x00007081e058b000)
-
 RUN cp -aLv /usr/lib64/libpthread.so.0 /usr/lib64/libm.so.6 /usr/lib64/libgcc_s.so.1 /usr/lib64/libc.so.6 /build/usr/lib64
 
 ## Location of the dynamic loader varies across architectures.
 RUN cp /usr/lib64/ld-linux* /build/usr/lib64 && ln -s /usr/lib64/ld-linux-* build/usr/bin/ld.so || true
 RUN cp /usr/lib/ld-linux* /build/usr/lib && ln -s /usr/lib/ld-linux-* build/usr/bin/ld.so || true
 RUN [ -f /build/usr/bin/ld.so ] || (echo "Unable to find a dynamic loader library in /usr/lib or /usr/lib64" && exit 1)
-
 RUN cp -av /etc/ld.so.* /build/etc
 
+## Add sh and dependencies for entrypoint and health-check configurations to the output image. Docker et. al. will wrap
+## commands in `/bin/sh -c` by default when string values are passed as entrypoint and health-cmd arguments. This is
+## useful for inline environment variable expansion:
+# $ ldd /usr/bin/sh
+# linux-vdso.so.1 (0x00007ffe0ab98000)
+# libtinfo.so.6 => /lib64/libtinfo.so.6 (0x00007f6c137ef000)
+# libc.so.6 => /lib64/libc.so.6 (0x00007f6c13602000)
+# /lib64/ld-linux-x86-64.so.2 (0x00007f6c1397f000)
+RUN cp -aLv /usr/bin/sh /build/usr/bin/
+RUN cp -aLv /usr/lib64/libtinfo.so.6 /build/usr/lib64
+
+## Build a static binary to provide health-checkers and a prometheus exporter
 FROM docker.io/library/golang:alpine AS monitor
 
 COPY monitor /build
