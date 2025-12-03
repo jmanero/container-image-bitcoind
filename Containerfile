@@ -71,3 +71,5 @@ COPY bitcoin.conf /etc/
 
 ENTRYPOINT [ "/usr/bin/bitcoind" ]
 CMD [ "-conf=/etc/bitcoin.conf" ]
+HEALTHCHECK --interval=1m --timeout=10s --retries=1 --start-period=72h --start-interval=10s \
+  CMD ["/usr/bin/monitor", "startup"]
